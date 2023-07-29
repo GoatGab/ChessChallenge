@@ -88,7 +88,7 @@ public class MyBot : IChessBot {
         return evaluation;
     }
 
-    int Search (Board board, int depth, int alpha, int beta, Move lastMove) {
+    /*int Search (Board board, int depth, int alpha, int beta, Move lastMove) {
         if (depth == 0) {
             return Evaluate(board, lastMove);
         }
@@ -110,17 +110,57 @@ public class MyBot : IChessBot {
             alpha = Math.Max(alpha, evaluation);
         }
         return alpha;
+    }*/
+
+    int Minimax(Board board, int depth, float alpha, float beta, bool maximizingPlayer, Move lastMove)
+    {
+        Move[] moves = board.GetLegalMoves();
+        if (depth == 0)
+        {
+            return Evaluate(board, lastMove);
+        }
+        if (maximizingPlayer)
+        {
+            int maxEval = int.MinValue;
+            foreach (Move move in moves)
+            {
+                Board previousBoard = board;
+                board.MakeMove(move);
+                int eval = Minimax(board, depth - 1, alpha, beta, false, lastMove);
+                board.UndoMove(move);
+                maxEval = Math.Max(maxEval, eval);
+                alpha = Math.Max(alpha, maxEval);
+                if (beta <= alpha) break;
+            }
+            return maxEval;
+        }
+        else
+        {
+            int minEval = int.MaxValue;
+            foreach (Move move in moves)
+            {
+                Board previousBoard = board;
+                board.MakeMove(move);
+                int eval = Minimax(board, depth - 1, alpha, beta, true, lastMove);
+                board.UndoMove(move);
+                minEval = Math.Min(minEval, eval);
+                beta = Math.Min(beta, eval);
+                if (beta <= alpha) break;
+            }
+            return minEval;
+        }
     }
 
     Move chooseMove(Board board, int depth)
     {
         List<int> scores = new List<int>();
-        Move[] moves = board.GetLegalMoves();
-        foreach(Move move in moves)
+        Move[] moves = orderMoves(board, board.GetLegalMoves());
+       // Move[] moves = board.GetLegalMoves();
+        foreach (Move move in moves)
         {
             evaluated = 0;
             board.MakeMove(move);
-            scores.Add(Search(board, depth, int.MinValue, int.MaxValue, move));
+            scores.Add(Minimax(board, depth, int.MinValue, int.MaxValue, true, move));
             Console.WriteLine(move.StartSquare.Name + move.TargetSquare.Name + " : " + scores.Last() + " | evaluated: " + evaluated);
             board.UndoMove(move);
         }
@@ -131,6 +171,6 @@ public class MyBot : IChessBot {
     {
         Move[] moves = board.GetLegalMoves();
         Console.WriteLine(score(39, 46, 13));
-        return chooseMove(board, 3);
+        return chooseMove(board, 4);
     }
 }
