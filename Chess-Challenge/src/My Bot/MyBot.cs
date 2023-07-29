@@ -24,10 +24,6 @@ public class MyBot : IChessBot {
         if (var) return 1;
         return -1;
     }
-
-    int evaluated = 0;
-
-
     Move[] orderMoves(Board board, Move[] moves)
     {
         int[] moveScoreGuesses = new int[moves.Length];
@@ -57,19 +53,6 @@ public class MyBot : IChessBot {
         return boolToInt(board.IsWhiteToMove) * (whiteScore - blackScore);
 
     }
-
-    float score(float w, float d, float l)
-    {
-        float t = w + d + l;
-        return (((w - l + (d / 2) + t) * 10) / (2 * t));
-    }
-
-    int completionEval(Board board, int currentEval)
-    {
-        if (board.IsDraw()) return -currentEval * 500;
-        return 0;
-    }
-
     int captureEval(Board board, Move move)
     {
         int captureValue = 0;
@@ -77,15 +60,39 @@ public class MyBot : IChessBot {
         return boolToInt(board.IsWhiteToMove) * captureValue;
     }
 
+    float map_value(float n, float start1, float stop1, float start2, float stop2)
+    {
+        return (n - start1) / (stop1 - start1) * (stop2 - start2) + start2;
+    }
+
+    int ForceKingToCornerEndgameEval(Square friendlyKingSquare, Square opponentKingSquare, float endgameWeight)
+    {
+        int evaluation = 0;
+        int opponentKingRank = friendlyKingSquare.Rank;
+        int opponentKingFile = friendlyKingSquare.File;
+        int opponentKingDstToCentreFile = Math.Max(3 - opponentKingFile, opponentKingFile - 4);
+        int opponentKingDstToCentreRank = Math.Max(3 - opponentKingRank, opponentKingRank - 4);
+        int opponentKingDstFromCentre = opponentKingDstToCentreFile + opponentKingDstToCentreRank;
+        evaluation += opponentKingDstFromCentre;
+        int friendlyKingRank = friendlyKingSquare.Rank;
+        int friendlyKingFile = friendlyKingSquare.File;
+        int dstBetweenKingsFile = Math.Abs(friendlyKingFile - opponentKingFile);
+        int dstBetweenKingsRank = Math.Abs(friendlyKingRank - opponentKingRank);
+        int dstBetweenKings = dstBetweenKingsFile + dstBetweenKingsRank;
+        evaluation += 14 - dstBetweenKings;
+        return (int)(evaluation * 10 * endgameWeight);
+    }
+
     int Evaluate(Board board, Move move)
     {
-        evaluated++;
+        bool player = board.IsWhiteToMove;
         Random rng = new Random();
+        int eval = 0;
         int randomFactor = rng.Next(-5, 5);
-        int evaluation = 0;
-        evaluation += materialEval(board) + randomFactor;
-        //evaluation += completionEval(board, evaluation);
-        return evaluation;
+        int endgameScore = ForceKingToCornerEndgameEval(board.GetKingSquare(player), board.GetKingSquare(!player), map_value(board.PlyCount, 0, 60, 0, 1));
+        eval = materialEval(board) + randomFactor + endgameScore;
+        int drawEval = Convert.ToInt32(board.IsDraw()) * -eval * 100;
+        return eval + drawEval;
     }
 
     /*int Search (Board board, int depth, int alpha, int beta, Move lastMove) {
@@ -158,19 +165,15 @@ public class MyBot : IChessBot {
        // Move[] moves = board.GetLegalMoves();
         foreach (Move move in moves)
         {
-            evaluated = 0;
             board.MakeMove(move);
             scores.Add(Minimax(board, depth, int.MinValue, int.MaxValue, true, move));
-            Console.WriteLine(move.StartSquare.Name + move.TargetSquare.Name + " : " + scores.Last() + " | evaluated: " + evaluated);
             board.UndoMove(move);
         }
-        Console.WriteLine("--------------------------------");
         return moves[scores.IndexOf(scores.Min())];
     }
     public Move Think(Board board, Timer timer)
     {
         Move[] moves = board.GetLegalMoves();
-        Console.WriteLine(score(39, 46, 13));
-        return chooseMove(board, 4);
+        return chooseMove(board, 2);
     }
 }
