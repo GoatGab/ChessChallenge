@@ -82,6 +82,7 @@ public class MyBot : IChessBot
         int captureValue = (getMaterialCount(prevBoard, player) - getMaterialCount(board, player)) - (getMaterialCount(prevBoard, !player) - getMaterialCount(board, !player));
         int endgameScore = ForceKingToCornerEndgameEval(board.GetKingSquare(player), board.GetKingSquare(!player), map_value(board.PlyCount, 0, 60, 0, 1));
         evaluated++;
+        Console.WriteLine("Fondo");
         return (MaterialScore + 10*captureValue + endgameScore)  * boolToInt(!player) + rng.Next(-5, 5);
     }
 
@@ -147,8 +148,7 @@ public class MyBot : IChessBot
     {
         Move[] moves = board.GetLegalMoves();
         if (depth == 0)
-        {
-            Console.WriteLine("Fondo");
+        { 
             //return searchAllCaptures(board, alpha, beta, prevBoard);
             return Eval(board, prevBoard);
         }
@@ -210,7 +210,7 @@ public class MyBot : IChessBot
             evaluated = 0;
             Board prevBoard = board;
             board.MakeMove(legalMoves[i]);
-            movesScore[i] = boolToInt(board.IsWhiteToMove) * Minimax(board, depth, posInfinity, negInfinity, board.IsWhiteToMove, prevBoard);
+            movesScore[i] = boolToInt(board.IsWhiteToMove) * Minimax(board, depth, negInfinity, posInfinity, board.IsWhiteToMove, prevBoard);
             Console.WriteLine(legalMoves[i].StartSquare.Name + legalMoves[i].StartSquare.Name + " : " + evaluated);
             board.UndoMove(legalMoves[i]);
         }
